@@ -92,6 +92,7 @@ uv run python main.py --blog YYYY MM
 
 - 買付入力: `uv run python main.py --add-purchase 7974.T 2026-08-01 1 8500`（日本株）/ `--add-purchase NVDA 2026-08-01 1 208.27 162.35`（外国株: 外貨単価と為替）。シート追記 → holdings/purchase_history 同期 → monthly_pnl 補正まで自動実行。1 株未満の端株（ポケポケサブスク相当の積立分）はポートフォリオ対象外のため受け付けない
 - `--repair-pnl [--dry-run]`: monthly_pnl の取得系カラム（shares/cost/acquired_price 系/value/profit）を purchase_history の累積で全月再計算。current_price 系は変更しない。月次収集後にも対象月分が自動補正される（collect_monthly_data 末尾フック）
+- `uv run python repair_prices.py --db <DB> [--apply]`: 月末価格を yfinance の**未調整終値**に揃え直し、評価額・損益と monthly_prices を再計算する単発ツール（既定はドライラン）。2023-07〜2025-08 の日本株が配当調整後終値で保存されていたのを直すために作った（2026-10）。適用後は `main.py --benchmark YYYY M` で TWR を再計算する。為替の過去データ修正は `repair_fx.py`
 
 ## GCE デプロイ手順
 
