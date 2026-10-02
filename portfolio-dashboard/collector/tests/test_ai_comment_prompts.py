@@ -207,6 +207,38 @@ def test_parse_reports_invalid_json_and_stock_validation_reason(capsys) -> None:
     assert "禁止された内容" in validation_output
 
 
+
+def test_prompt_lists_exact_symbol_keys() -> None:
+    prompt = _build_generation_prompt(REPORT_DATA)
+    # 実際の銘柄コード（接尾辞込み）をキーにした例を出す
+    expected = '"stock_comments":{"7974.T": "銘柄別コメント", "NVDA": "銘柄別コメント"}'
+    assert expected in prompt
+    assert "一字一句そのまま" in prompt
+
+
+def test_parse_accepts_symbol_without_suffix_and_case_difference() -> None:
+    # 2026-09 の本番で、AI が "7974.T" を "7974" に縮めて返し、コメントが落ちた
+    result = _parse_generation_response(
+        '{"intro":"導入です。", "stock_comments":{'
+        '"7974":"任天堂の一文です。", "nvda":"NVIDIAの一文です。"}}',
+        REPORT_DATA,
+    )
+    assert result["stock_comments"] == {
+        "7974.T": "任天堂の一文です。",
+        "NVDA": "NVIDIAの一文です。",
+    }
+
+
+def test_parse_reports_missing_key_separately(capsys) -> None:
+    _parse_generation_response(
+        '{"intro":"導入です。", "stock_comments":{'
+        '"7974.T": 123, "OTHER":"関係ない銘柄です。"}}',
+        REPORT_DATA,
+    )
+    output = capsys.readouterr().out
+    assert "7974.T を除外しました: 文字列ではありません" in output
+    assert "NVDA を除外しました: キーがありません" in output
+
 class _FakeMessages:
     def __init__(self, response_text: str) -> None:
         self.response_text = response_text

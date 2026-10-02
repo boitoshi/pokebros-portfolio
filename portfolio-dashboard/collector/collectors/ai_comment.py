@@ -140,6 +140,12 @@ def _build_generation_prompt(report_data: dict) -> str:
             ]
         )
     holdings_text = "\n".join(holding_lines) if holding_lines else "  （保有銘柄なし）"
+    # キーは銘柄コードをそのまま使わせる（"7974.T" → "7974" の揺れが実際に起きた）
+    symbols = _expected_symbols(report_data)
+    stock_comments_example = json.dumps(
+        dict.fromkeys(symbols, "銘柄別コメント") or {"銘柄コード": "銘柄別コメント"},
+        ensure_ascii=False,
+    )
 
     return (
         f"対象月: {year}年{month}月\n\n"
@@ -153,11 +159,12 @@ def _build_generation_prompt(report_data: dict) -> str:
         f"保有銘柄:\n{holdings_text}\n\n"
         "次のJSONだけを返してください。Markdownのコードフェンスや前後の説明は不要です。\n"
         '{"intro":"記事上部の全体コメント",'
-        '"stock_comments":{"銘柄コード":"銘柄別コメント"}}\n\n'
+        f'"stock_comments":{stock_comments_example}}}\n\n'
         "執筆ルール:\n"
         "- introは1段落、最大3文。主要な全体状況だけを書く。\n"
         "- 各銘柄コメントは1〜2文。その銘柄固有の数値や動きだけを書く。\n"
-        "- 全銘柄をstock_commentsに銘柄コードをキーとして含める。\n"
+        "- 全銘柄をstock_commentsに含める。キーは上の例と同じ銘柄コードを"
+        "「.T」などの接尾辞も含めて一字一句そのまま使う。\n"
         "- 銘柄の値動きは原則としてカードと同じ円建て前月末比を使う。\n"
         "- 累積評価損益率を市場の月間騰落率と比較しない。月間と累積を混同しない。\n"
         "- 月末株価だけが各銘柄の現地通貨。累積評価損益はUSD銘柄を含めて"
@@ -167,6 +174,30 @@ def _build_generation_prompt(report_data: dict) -> str:
         "- 導入と各銘柄コメントで内容を重複させない。\n"
         "- 導入や銘柄コメント内で箇条書き・見出しを使わない。"
     )
+
+
+def _expected_symbols(report_data: dict) -> list[str]:
+    """report_data の保有銘柄コード一覧（プロンプトと検証で同じものを使う）。"""
+    return [
+        str(holding.get("symbol") or holding.get("code", ""))
+        for holding in report_data.get("holdings", [])
+        if holding.get("symbol") or holding.get("code")
+    ]
+
+
+def _lookup_stock_comment(stock_comments: dict, symbol: str) -> tuple[bool, object]:
+    """銘柄コメントをキーの揺れを吸収して探す。(見つかったか, 値) を返す。
+
+    完全一致 → 大文字小文字無視 → 接尾辞（".T" 等）を除いたコードの順で照合する。
+    """
+    if symbol in stock_comments:
+        return True, stock_comments[symbol]
+    base = symbol.split(".", 1)[0]
+    for key, value in stock_comments.items():
+        key_str = str(key).strip()
+        if key_str.casefold() in (symbol.casefold(), base.casefold()):
+            return True, value
+    return False, None
 
 
 def _fallback_comments(report_data: dict) -> dict:
@@ -240,15 +271,13 @@ def _parse_generation_response(text: str, report_data: dict) -> dict:
         print("⚠️ AI コメント stock_comments を除外しました: オブジェクトではありません")
         stock_comments = {}
 
-    expected_symbols = [
-        str(holding.get("symbol") or holding.get("code", ""))
-        for holding in report_data.get("holdings", [])
-        if holding.get("symbol") or holding.get("code")
-    ]
     validated_comments: dict[str, str] = {}
-    for symbol in expected_symbols:
-        comment = stock_comments.get(symbol)
-        comment_error = _validation_error(comment, 2)
+    for symbol in _expected_symbols(report_data):
+        found, comment = _lookup_stock_comment(stock_comments, symbol)
+        # 3. キーが無いことと値の型違いを区別して出す
+        comment_error = (
+            "キーがありません" if not found else _validation_error(comment, 2)
+        )
         if comment_error:
             print(
                 f"⚠️ AI コメント {symbol} を除外しました: {comment_error}"
