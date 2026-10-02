@@ -5,12 +5,28 @@ interface Props {
   year: number;
   month: number;
   usdJpy: number;
+  /** 最新スナップショットの最終取引日（YYYY-MM-DD）。月次表示なら null */
+  asOf?: string | null;
+}
+
+/** 基準日表記: 最新スナップショットなら「YYYY年M月D日時点」、月次なら「YYYY年M月末」 */
+function formatBaseLabel(
+  year: number,
+  month: number,
+  asOf: string | null,
+): string {
+  const match = asOf?.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (match) {
+    return `${Number(match[1])}年${Number(match[2])}月${Number(match[3])}日時点`;
+  }
+  return `${year}年${month}月末`;
 }
 
 export function GradientHeader({
   year,
   month,
   usdJpy,
+  asOf = null,
 }: Props): React.ReactElement {
   return (
     <div
@@ -60,7 +76,7 @@ export function GradientHeader({
             margin: 0,
           }}
         >
-          {`${year}年${month}月末 ・ USD/JPY ¥${usdJpy.toFixed(2)}`}
+          {`${formatBaseLabel(year, month, asOf)} ・ USD/JPY ¥${usdJpy.toFixed(2)}`}
         </p>
       </div>
     </div>

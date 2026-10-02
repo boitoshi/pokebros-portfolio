@@ -23,6 +23,8 @@ const cardStyle: React.CSSProperties = {
 
 interface Props {
   stock: DashboardStock;
+  /** 最新スナップショット表示中か（ラベルを「月初来」「前月末比」に切り替える） */
+  isLive?: boolean;
 }
 
 /** 期間に応じてスライス件数を返す */
@@ -33,7 +35,10 @@ function sliceCount(period: Period, total: number): number {
   return total; // ALL
 }
 
-export function StockCard({ stock }: Props): React.ReactElement {
+export function StockCard({
+  stock,
+  isLive = false,
+}: Props): React.ReactElement {
   const [period, setPeriod] = useState<Period>("6M");
   const [showComment, setShowComment] = useState(false);
 
@@ -177,7 +182,7 @@ export function StockCard({ stock }: Props): React.ReactElement {
               fontWeight: 500,
             }}
           >
-            月間変動
+            {isLive ? "月初来" : "月間変動"}
           </p>
           <p
             className={
@@ -214,7 +219,7 @@ export function StockCard({ stock }: Props): React.ReactElement {
               fontWeight: 500,
             }}
           >
-            前月比
+            {isLive ? "前月末比" : "前月比"}
           </p>
           <p
             className={prevMonthRate !== null ? plColor(prevMonthRate) : ""}

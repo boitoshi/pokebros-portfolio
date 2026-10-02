@@ -105,7 +105,9 @@ export default function Dashboard() {
 
   // 新デザイン
   if (hasNewData && data.stocks && data.totalHistory) {
-    const { year, month } = parseBaseDate(data.kpi.baseDate);
+    // 最新スナップショットがあればその年月を見出しに使う（月末固定にしない）
+    const asOf = data.asOf ?? null;
+    const { year, month } = parseBaseDate(asOf ?? data.kpi.baseDate);
     const usdJpy = data.usdJpy ?? 0;
     const stocks = data.stocks;
     const totalHistory = data.totalHistory;
@@ -115,7 +117,7 @@ export default function Dashboard() {
       // グラデーションヘッダーをコンテナ全幅まで広げる
       <div className="-mt-8 -mx-4 sm:-mx-6 lg:-mx-8">
         {/* グラデーションヘッダー（全幅） */}
-        <GradientHeader year={year} month={month} usdJpy={usdJpy} />
+        <GradientHeader year={year} month={month} usdJpy={usdJpy} asOf={asOf} />
 
         {/* メインコンテンツ */}
         <div
@@ -158,7 +160,11 @@ export default function Dashboard() {
             className="max-[900px]:!grid-cols-1"
           >
             {stocks.map((stock) => (
-              <StockCard key={stock.code} stock={stock} />
+              <StockCard
+                key={stock.code}
+                stock={stock}
+                isLive={asOf !== null}
+              />
             ))}
           </div>
         </div>

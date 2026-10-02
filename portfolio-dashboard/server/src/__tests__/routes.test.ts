@@ -21,6 +21,7 @@ beforeAll(async () => {
     "0002_petite_vampiro.sql",
     "0003_overjoyed_santa_claus.sql",
     "0004_adorable_tyger_tiger.sql",
+    "0005_remarkable_kingpin.sql",
   ];
 
   for (const file of migrationFiles) {

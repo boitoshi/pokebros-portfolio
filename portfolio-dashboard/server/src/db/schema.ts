@@ -212,3 +212,28 @@ export const wpPosts = sqliteTable(
     monthUniq: uniqueIndex("uq_wp_posts_month").on(table.month),
   }),
 );
+
+// ━━━ 最新スナップショット（collector が毎日上書き。トップページ用） ━━━
+export const latestPnl = sqliteTable("latest_pnl", {
+  code: text("code").primaryKey(),
+  name: text("name").notNull(),
+  currency: text("currency").notNull(),
+  // "YYYY-MM-DD"（yfinance の最終取引日）
+  priceDate: text("price_date").notNull(),
+  // 円建て現在価格
+  currentPrice: real("current_price").notNull(),
+  currentPriceForeign: real("current_price_foreign"),
+  exchangeRate: real("exchange_rate"),
+  // 当月最初の終値（native）。無ければ null
+  monthStartPriceNative: real("month_start_price_native"),
+  shares: real("shares").notNull(),
+  cost: real("cost").notNull(),
+  // 円建て平均取得単価
+  acquiredPrice: real("acquired_price").notNull(),
+  // native 平均取得単価（日本株は null）
+  acquiredPriceForeign: real("acquired_price_foreign"),
+  value: real("value").notNull(),
+  profit: real("profit").notNull(),
+  profitRate: real("profit_rate").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});

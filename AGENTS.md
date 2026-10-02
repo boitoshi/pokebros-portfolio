@@ -110,6 +110,7 @@ npm run db:migrate -w server    # 適用（冪等）
 cd collector
 uv run python main.py --blog 2026 3                                    # ブログ下書き＋埋め込み生成
 uv run python main.py --repair-pnl --dry-run                           # monthly_pnl 補正の差分確認
+uv run python main.py --latest                                         # トップページ用の最新値を更新（日次 cron）
 uv run python main.py --add-purchase 7974.T 2026-08-01 1 8500          # 買付追記（日本株）
 uv run python main.py --add-purchase NVDA 2026-08-01 1 208.27 162.35   # 買付追記（外国株）
 uv run python main.py --add-dividend 7974.T 2026-06-27 2 118           # 配当記録（日本株: 株数・1株配当円）

@@ -117,6 +117,52 @@ class DbWriter:
         )
         self.conn.commit()
 
+    def save_latest_pnl(self, row: dict) -> None:
+        """最新スナップショット（latest_pnl）を保存（UPSERT・全列更新）"""
+        self.conn.execute(
+            """
+            INSERT INTO latest_pnl (code, name, currency, price_date, current_price,
+                current_price_foreign, exchange_rate, month_start_price_native,
+                shares, cost, acquired_price, acquired_price_foreign,
+                value, profit, profit_rate, updated_at)
+            VALUES (:code, :name, :currency, :price_date, :current_price,
+                :current_price_foreign, :exchange_rate, :month_start_price_native,
+                :shares, :cost, :acquired_price, :acquired_price_foreign,
+                :value, :profit, :profit_rate, :updated_at)
+            ON CONFLICT(code) DO UPDATE SET
+                name=excluded.name, currency=excluded.currency,
+                price_date=excluded.price_date,
+                current_price=excluded.current_price,
+                current_price_foreign=excluded.current_price_foreign,
+                exchange_rate=excluded.exchange_rate,
+                month_start_price_native=excluded.month_start_price_native,
+                shares=excluded.shares, cost=excluded.cost,
+                acquired_price=excluded.acquired_price,
+                acquired_price_foreign=excluded.acquired_price_foreign,
+                value=excluded.value, profit=excluded.profit,
+                profit_rate=excluded.profit_rate, updated_at=excluded.updated_at
+        """,
+            row,
+        )
+        self.conn.commit()
+
+    def delete_latest_pnl_except(self, codes: list[str]) -> int:
+        """指定コード以外の latest_pnl 行を削除する（holdings から消えた銘柄の掃除）
+
+        Returns:
+            削除した行数
+        """
+        if codes:
+            placeholders = ",".join("?" * len(codes))
+            cursor = self.conn.execute(
+                f"DELETE FROM latest_pnl WHERE code NOT IN ({placeholders})",
+                codes,
+            )
+        else:
+            cursor = self.conn.execute("DELETE FROM latest_pnl")
+        self.conn.commit()
+        return cursor.rowcount
+
     def get_holding_by_code(self, code: str) -> dict | None:
         """holdings から銘柄コードで1件取得する（配当記録の銘柄名・通貨引き当て用）。
 

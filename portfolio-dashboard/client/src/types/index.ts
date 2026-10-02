@@ -28,6 +28,7 @@ export interface DashboardResponse {
   stocks?: DashboardStock[];
   totalHistory?: TotalHistory;
   usdJpy?: number;
+  asOf?: string | null; // 最新スナップショットの最終取引日（YYYY-MM-DD）。月次表示なら null
 }
 
 // 買付履歴 1 件（purchase_history テーブル由来）

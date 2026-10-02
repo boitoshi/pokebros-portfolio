@@ -44,12 +44,13 @@ portfolio-dashboard/
 | dividends | 受取配当（date+code UNIQUE）。`--add-dividend` CLI で記録。日本株は total_jpy のみ、外国株は dividend_foreign/total_foreign/exchange_rate も保持 |
 | wp_posts | WordPress 投稿 URL（month `"YYYY-MM"` UNIQUE, url, title）。--blog の create_draft 成功時に保存。レポート一覧の「ブログ記事」リンクの源泉 |
 | benchmark_data | ベンチマーク |
+| latest_pnl | トップページ用の最新スナップショット（code PK、1銘柄1行）。`--latest` が毎日上書きする。月次データ・レポート・ブログには使わない |
 
 ## API
 
 | エンドポイント | 備考 |
 |---|---|
-| GET /api/dashboard | 既存 kpi/allocation/latestProfits ＋ **stocks[]・totalHistory・usdJpy**（新デザイン用。形状の正は `server/src/services/reportData.ts`） |
+| GET /api/dashboard | 既存 kpi/allocation/latestProfits ＋ **stocks[]・totalHistory・usdJpy**（新デザイン用。形状の正は `server/src/services/reportData.ts`）。latest_pnl の最終取引日が monthly_pnl 最新月より後なら `services/liveSnapshot.ts` が最新値を重ね、各配列の末尾に当月1点を足して `asOf`（YYYY-MM-DD）を返す。重ねないときは `asOf: null` |
 | GET /api/reports/:year/:month/data | 月次レポートデータ（portfolio.json 形状）。該当月なしは 404 → client は Markdown 表示にフォールバック |
 | GET /api/reports/:year/:month | 従来の Markdown レポート（維持） |
 | GET /api/reports | 一覧は DB（monthly_pnl の月）＋ blog_draft ファイルの和集合。各項目に `wpUrl`（wp_posts 由来、無ければ null）。filename は廃止 |
@@ -119,6 +120,17 @@ npm run db:migrate -w server        # DB: /app/portfolio-dashboard/data/portfoli
 sudo systemctl restart portfolio
 cd collector && uv sync --extra ai --extra charts   # 素の uv sync は extras（anthropic/markdown/matplotlib）を削除してしまう
 ```
+
+### 日次 cron（トップページの最新値）
+
+毎日 21:30 UTC（JST 6:30。東証・米国の前日終値が確定した後）に `--latest` を実行し、latest_pnl を上書きする。AI・WP・monthly_* には触れないので費用は増えない。
+
+```
+30 21 * * * export PATH="$HOME/.local/share/fnm:$HOME/.local/bin:$PATH" && cd /app/portfolio-dashboard/collector && uv run python main.py --latest >> /app/portfolio-dashboard/logs/latest.log 2>&1
+```
+
+- yfinance は未確定の当日行を Close=NaN で返すことがあるため、確定済みの最終行を使う（東証は前営業日の値になることがある）
+- 月初で最新値がまだ前月末のままの日は重ねず、月次表示になる
 
 ### 月次 cron（ブログ自動下書き）
 

@@ -10,9 +10,12 @@ import time
 from datetime import datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 
+import yfinance as yf
+
 from collectors.benchmark_collector import BenchmarkCollector
 from collectors.db_writer import DbWriter
 from collectors.dividend_import import aggregate, build_save_record, parse_rakuten_csv
+from collectors.latest_snapshot import compute_latest_row, extract_latest_prices
 from collectors.pnl_repair import repair_monthly_pnl
 from collectors.report_generator import BlogReportGenerator
 from collectors.sheets_sync import SheetsSync
@@ -527,6 +530,77 @@ class PortfolioDataCollector:
         synced = self.sheets_sync.sync_holdings()
         history_count = self.sheets_sync.sync_purchase_history()
         print(f"同期完了: {synced}件（購入履歴: {history_count}件）")
+        return True
+
+    def collect_latest(self) -> bool:
+        """トップページ用の最新スナップショット（latest_pnl）を今日時点で上書きする。
+
+        monthly_* / ブログ / AI / WP には触れない。Sheets 同期もしない。
+
+        Returns:
+            1 銘柄以上保存できたら True
+        """
+        print("\n=== 最新スナップショット（latest_pnl）更新 ===")
+        today = datetime.now()
+        month_first = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        start = min(month_first, today - timedelta(days=10))
+        converter = self.stock_collector.currency_converter
+
+        holdings = self.db_writer.get_portfolio_data()
+        saved = 0
+        for h in holdings:
+            code = h["code"]
+            name = h["name"]
+            try:
+                history = yf.Ticker(code).history(start=start, auto_adjust=False)
+                prices = extract_latest_prices(history, today.year, today.month)
+                if prices is None:
+                    print(f"  ⚠ {name}（{code}）: 株価データが空のためスキップ")
+                    continue
+                price_native, price_date, month_start = prices
+
+                currency = converter.get_currency_from_symbol(code)
+                rate: float | None = None
+                if is_foreign_stock(code):
+                    rate = converter.get_exchange_rate(currency, today)
+                    if rate is None:
+                        print(
+                            f"  ❌ {name}（{code}）: 為替レート取得失敗のためスキップ"
+                        )
+                        continue
+
+                row = compute_latest_row(
+                    code=code,
+                    name=name,
+                    purchases=self.db_writer.get_purchase_history(code),
+                    price_native=price_native,
+                    price_date=price_date,
+                    month_start_price_native=month_start,
+                    exchange_rate=rate,
+                    currency=currency,
+                    today=today.date(),
+                )
+                if row is None:
+                    print(f"  ⚠ {name}（{code}）: 保有株数 0 のためスキップ")
+                    continue
+
+                self.db_writer.save_latest_pnl(row)
+                saved += 1
+                print(
+                    f"  {name}: {price_date} 終値 {row['current_price']:,.0f}円 / "
+                    f"損益 {row['profit']:+,.0f}円"
+                )
+            except Exception as e:
+                print(f"  ❌ {name}（{code}）: 処理に失敗しました（{e}）")
+
+        removed = self.db_writer.delete_latest_pnl_except([h["code"] for h in holdings])
+        if removed:
+            print(f"  holdings に無い {removed} 行を削除しました")
+
+        if saved == 0:
+            print("❌ 1 銘柄も保存できませんでした")
+            return False
+        print(f"  完了: {saved}/{len(holdings)} 銘柄を保存")
         return True
 
     def repair_pnl(self, dry_run: bool = False) -> bool:
@@ -1294,6 +1368,11 @@ def main() -> None:
     elif args == ["--sync"]:
         collector.sync_holdings_only()
 
+    # python main.py --latest  → トップページ用の最新スナップショットのみ更新
+    elif args == ["--latest"]:
+        if not collector.collect_latest():
+            sys.exit(1)
+
     # python main.py --benchmark 2024 12  → ベンチマークのみ
     elif len(args) == 3 and args[0] == "--benchmark":
         ym = _parse_year_month(args[1:], "--benchmark")
@@ -1359,6 +1438,7 @@ def main() -> None:
         print("  python main.py                         # 対話型")
         print("  python main.py 2024 12                 # 月次フル収集")
         print("  python main.py --sync                  # Sheets同期のみ")
+        print("  python main.py --latest                # 最新スナップショット更新")
         print("  python main.py --benchmark 2024 12     # ベンチマークのみ")
         print("  python main.py --blog 2024 12          # ブログ生成のみ")
         print("  python main.py --range 2024 1 2024 12  # 期間範囲バッチ")
