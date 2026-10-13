@@ -15,19 +15,19 @@
 **Google Sheetsで以下を実行:**
 
 1. **スプレッドシートを開く**
-   - URL: `https://docs.google.com/spreadsheets/d/1OzUHxgBoFz6tzkd3hg4j3L2yeQ5Qw0vk3mIk4j4IjIM/edit`
+   - URL: `https://docs.google.com/spreadsheets/d/<SPREADSHEET_ID>/edit`（`<SPREADSHEET_ID>` は `.env` の `SPREADSHEET_ID`）
 
 2. **共有設定を確認**
    - 右上の「共有」ボタンをクリック
    - サービスアカウントのメールアドレスが追加されているか確認:
      ```
-     spreadsheet-access@pokebros-project.iam.gserviceaccount.com
+     <サービスアカウントのメールアドレス>（認証情報 JSON の client_email）
      ```
 
 3. **サービスアカウントを追加（未追加の場合）**
    - 「ユーザーやグループを追加」に以下のメールアドレスを入力:
      ```
-     spreadsheet-access@pokebros-project.iam.gserviceaccount.com
+     <サービスアカウントのメールアドレス>（認証情報 JSON の client_email）
      ```
    - **権限**: 「編集者」を選択
    - 「送信」をクリック
@@ -36,7 +36,7 @@
 
 **Google Cloud Consoleで以下を確認:**
 
-1. **プロジェクト**: `pokebros-project`
+1. **プロジェクト**: サービスアカウントが属する GCP プロジェクト（認証情報 JSON の project_id）
 2. **有効化すべきAPI**:
    - Google Sheets API
    - Google Drive API
@@ -53,7 +53,7 @@
 **IAMで権限確認:**
 ```
 1. Google Cloud Console → IAM と管理 → IAM
-2. サービスアカウント「spreadsheet-access@pokebros-project.iam.gserviceaccount.com」を確認
+2. サービスアカウント（認証情報 JSON の client_email）を確認
 3. 最低限必要な権限: 「編集者」または「Google Sheets API利用」
 ```
 
@@ -100,7 +100,7 @@ else:
 **症状**: `Requested entity was not found`
 **解決**: .envファイルのSPREADSHEET_IDを確認
 ```
-SPREADSHEET_ID=1OzUHxgBoFz6tzkd3hg4j3L2yeQ5Qw0vk3mIk4j4IjIM
+SPREADSHEET_ID=<スプレッドシートの URL の /d/ と /edit の間の文字列>
 ```
 
 ## 📝 設定完了後の確認事項
