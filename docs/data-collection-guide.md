@@ -1,4 +1,6 @@
-# データ収集システム操作ガイド
+# データ収集システム操作ガイド（⚠️ 旧構成: data-collector）
+
+> **このドキュメントは旧システム（data-collector・Google Sheets 転記）の記述です。現行の collector は `portfolio-dashboard/collector/` で、コマンドは AGENTS.md と docs/portfolio-dashboard.md 参照。**
 
 ## 概要
 data-collectorは月次で株価データを取得し、Google Sheetsに転記するシステムです。

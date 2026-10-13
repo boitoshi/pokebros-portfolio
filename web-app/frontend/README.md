@@ -1,4 +1,6 @@
-# フロントエンド（Next.js）
+# フロントエンド（Next.js）（⚠️ 旧構成）
+
+> **`web-app/` は旧システム（Next.js + FastAPI）で、メンテ停止中・変更禁止です。現行の画面は `portfolio-dashboard/client/`（docs/portfolio-dashboard.md 参照）。**
 
 ポートフォリオダッシュボードの Next.js 16 アプリケーション。
 

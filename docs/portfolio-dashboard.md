@@ -21,7 +21,7 @@ portfolio-dashboard/
 │   ├── src/db/schema.ts    # Drizzle スキーマ
 │   └── drizzle/migrations/ # マイグレーション SQL（IF NOT EXISTS で冪等化済み）
 ├── collector/              # Python バッチ（uv）
-│   ├── main.py             # --sync / --range / --blog / --repair-pnl / --add-purchase / collect_and_publish
+│   ├── main.py             # --sync / --latest / --range / --blog / --repair-pnl / --add-purchase / --add-dividend / --import-dividends / collect_and_publish
 │   ├── collectors/         # db_writer, report_generator, ai_comment, wp_publisher,
 │   │                       #   block_converter, report_json_builder, embed_generator ほか
 │   ├── templates/          # blog_template.md, blog_embed.html（Jinja2）
@@ -86,6 +86,7 @@ uv run python main.py --blog YYYY MM
 
 - 配当入力: `uv run python main.py --add-dividend 7974.T 2026-06-27 2 118`（日本株: 株数・1株配当円）/ `--add-dividend NVDA 2026-06-27 2 0.01 155.30`（外国株: 株数・1株配当外貨・為替レート）
 - シート非依存で SQLite の dividends に直接 UPSERT（date+code キー）。銘柄名・通貨は holdings から取得するため、holdings に無い銘柄は登録不可
+- 一括取込: `uv run python main.py --import-dividends dividendlist.csv [--dry-run]`（楽天証券の配当金明細 CSV・cp932。税引前総額から1株配当を導出し、外国株は受取日の為替レートを取得。1件でもレートが取れなければ何も書き込まずに終了する。date+code の UPSERT なので再実行できる）
 - 証券会社の受取通知を見て随時入力する運用（月次バッチとは独立）。`/dividend` ページに累計・今年サマリー、年別積み上げチャート、全期間の明細が表示される
 
 ## 買付の記録と monthly_pnl 補正
@@ -135,7 +136,7 @@ cd collector && uv sync --extra ai --extra charts   # 素の uv sync は extras�
 
 ### 月次 cron（ブログ自動下書き）
 
-毎月1日 9:00 に**前月分**の月次バッチ（`collect_and_publish`: 株価収集→ブログ生成→WP 下書き投稿）を実行する。crontab は deploy.sh では更新されないため、変更時は GCE 上で `crontab -e` を直接編集すること。
+毎月1日 9:00 に**前月分**の月次バッチ（`collect_and_publish`: 株価収集→ブログ生成→WP 下書き投稿）を実行する。deploy.sh が crontab に触るのは、月次行が旧形式（`main.py $(date +\%Y) $(date +\%m)`＝当月を渡す形）で残っている場合に下の形へ書き換える補正だけ（手順 6.5）。それ以外の変更（時刻・コマンドなど）は GCE 上で `crontab -e` を直接編集すること。
 
 ```
 0 9 1 * * cd /app/portfolio-dashboard/collector && uv run python main.py $(date -d yesterday +\%Y) $(date -d yesterday +\%m) >> /app/logs/collector.log 2>&1

@@ -1,4 +1,6 @@
-# Portfolio Data Collector
+# Portfolio Data Collector（⚠️ 旧構成）
+
+> **`data-collector/` は旧システム（Google Sheets 転記）で、メンテ停止中・変更禁止です。現行の collector は `portfolio-dashboard/collector/`（docs/portfolio-dashboard.md 参照）。**
 
 投資ポートフォリオの月次データ収集システム
 
