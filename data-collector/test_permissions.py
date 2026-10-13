@@ -104,7 +104,7 @@ if __name__ == "__main__":
         print("\n🔧 解決方法:")
         print("1. スプレッドシートの共有設定を確認")
         print("2. サービスアカウントを「編集者」権限で追加:")
-        print("   spreadsheet-access@pokebros-project.iam.gserviceaccount.com")
+        print("   （認証情報 JSON の client_email のアドレス）")
         print("3. Google Cloud ConsoleでAPI有効化確認")
         print("4. docs/google-sheets-setup.md を参照")
         sys.exit(1)
