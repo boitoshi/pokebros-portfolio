@@ -1,4 +1,6 @@
-# Google Sheets API設定ガイド
+# Google Sheets API設定ガイド（⚠️ 旧構成: data-collector）
+
+> **このドキュメントは旧システム（data-collector）のサービスアカウント権限エラーの対応記録です。Google Sheets は現行 collector の `--sync` の入力元として現役ですが、認証設定は `portfolio-dashboard/collector/config/settings.py` と `.env.example` 参照。**
 
 ## エラー解決手順
 
@@ -91,7 +93,7 @@ else:
 ### ケース3: 認証ファイルが間違っている
 **症状**: `No such file or directory` または認証エラー
 **解決**: 
-1. 認証ファイルパスを確認: `/Users/akabros/Documents/code/spreadsheet-chart-vue/data-collector/config/my-service-account.json`
+1. 認証ファイルパスを確認: `/Users/akabros/Documents/code/pokebros-portfolio/data-collector/config/my-service-account.json`
 2. ファイル内容を確認（client_emailが正しいか）
 
 ### ケース4: スプレッドシートIDが間違っている

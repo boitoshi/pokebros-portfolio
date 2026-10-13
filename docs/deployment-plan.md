@@ -1,4 +1,6 @@
-# デプロイ方針
+# デプロイ方針（⚠️ 旧構成: Cloud Run + CONOHA/Vercel・採用せず）
+
+> **このドキュメントは旧システム（web-app / data-collector）向けに立てた計画で、採用されていません。現行の本番は GCE e2-micro です（docs/portfolio-dashboard.md の「GCE デプロイ手順」参照）。**
 
 ## 構成概要
 

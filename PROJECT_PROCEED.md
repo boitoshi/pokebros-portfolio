@@ -37,7 +37,7 @@
 | 起票時の論点 | 現状 |
 |---|---|
 | 月次記事の生成機能に専用タブがある → **仕様を検討** | **決着済み**。下の「2026-08-02」節のとおり、月次レポートタブは存続（アプリ内レポート＋WP記事リンクのハイブリッド）。一覧を DB 駆動に変更し、`wp_posts` テーブルで WP 投稿 URL を永続化する形で実装済み |
-| 配当金ページ（Dividend）を**実装するか廃止するか決める** | **決着済み**。実装（廃止しない）。`--add-dividend` CLI（`collector/main.py:604`）・`dividends` の UNIQUE(date, code)・配当ページの新デザインまで完了 |
+| 配当金ページ（Dividend）を**実装するか廃止するか決める** | **決着済み**。実装（廃止しない）。`--add-dividend` CLI（`collector/main.py` の `PortfolioDataCollector.add_dividend`）・`dividends` の UNIQUE(date, code)・配当ページの新デザインまで完了 |
 
 ### 残っているもの → **無し**（2026-08-05 時点）
 
