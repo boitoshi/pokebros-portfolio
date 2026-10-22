@@ -23,7 +23,6 @@ dev = [
 [tool.uv.workspace]
 members = [
     "data-collector",
-    "web-app/backend"
 ]
 
 [tool.uv]

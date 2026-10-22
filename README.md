@@ -21,7 +21,6 @@ pokebros-portfolio/
 │   ├── deploy/             # GCE 用: deploy.sh / backup.sh / setup.sh / Caddyfile / systemd unit
 │   └── scripts/            # 旧 Google Sheets からの移行スクリプト
 ├── docs/                   # ドキュメント（現行は portfolio-dashboard.md）
-├── web-app/                # 旧構成（Next.js + FastAPI）。メンテ停止・変更禁止
 ├── data-collector/         # 旧構成の収集バッチ。メンテ停止・変更禁止
 └── shared/                 # 旧構成の共通定義。メンテ停止・変更禁止
 ```
