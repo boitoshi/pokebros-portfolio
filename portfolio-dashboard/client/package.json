@@ -28,7 +28,7 @@
     "typescript": "^5.7",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "vitest": "^3",
+    "vitest": "^4.1.12",
     "@testing-library/react": "^16",
     "@testing-library/jest-dom": "^6",
     "jsdom": "^26"

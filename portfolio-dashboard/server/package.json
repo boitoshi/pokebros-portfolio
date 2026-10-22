@@ -21,10 +21,10 @@
     "drizzle-orm": "^0.45.2"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.30",
+    "drizzle-kit": "^0.31",
     "@types/better-sqlite3": "^7",
     "tsx": "^4",
     "typescript": "^5.7",
-    "vitest": "^3"
+    "vitest": "^4.1.12"
   }
 }
