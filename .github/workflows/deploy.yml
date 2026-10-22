@@ -18,6 +18,9 @@ concurrency:
   group: deploy-gce
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
   deploy:
     name: GCE へデプロイ
