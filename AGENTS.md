@@ -81,7 +81,7 @@ npm run test      # テスト
 
 投資ポートフォリオ管理＋月次ブログ自動化アプリケーション。**現行システムは `portfolio-dashboard/`**（Hono + React SPA + SQLite）。GCE e2-micro で本番稼働中（月次 cron・WordPress 自動投稿）。
 
-**⚠️ `web-app/` と `data-collector/` は旧構成（Next.js + FastAPI + Google Sheets）。メンテ停止中で、変更しないこと。**
+**⚠️ `data-collector/` と `shared/` は旧構成（Google Sheets 時代）。メンテ停止中で、変更しないこと。** 旧構成の `web-app/`（Next.js + FastAPI）は 2026-10-23 に削除した（依存の脆弱性アラート解消のため。中身は git 履歴にある）。
 
 ## 技術スタック（portfolio-dashboard）
 

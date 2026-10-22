@@ -147,4 +147,4 @@ cd collector && uv sync --extra ai --extra charts   # 素の uv sync は extras�
 
 ## 旧構成（参考）
 
-`web-app/`（Next.js + FastAPI）・`data-collector/`・`shared/` は 2026-04 の移行前の旧システム。ドキュメントは docs/project-structure.md・docs/sheets-schema.md・docs/api-reference.md（いずれも旧構成の記述）。変更禁止。
+`data-collector/`・`shared/` は 2026-04 の移行前の旧システム（同じく旧システムの `web-app/`（Next.js + FastAPI）は 2026-10-23 に削除）。ドキュメントは docs/project-structure.md・docs/sheets-schema.md・docs/api-reference.md（いずれも旧構成の記述）。変更禁止。
