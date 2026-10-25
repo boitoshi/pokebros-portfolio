@@ -47,12 +47,14 @@ jobs:
         if: steps.check.outputs.configured == 'true'
         env:
           SSH_KEY: ${{ secrets.GCE_SSH_KEY }}
-          HOST: ${{ secrets.GCE_HOST }}
         run: |
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
           printf '%s\n' "$SSH_KEY" > ~/.ssh/id_deploy
           chmod 600 ~/.ssh/id_deploy
-          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          # 接続先の鍵は接続のたびに取り込まず、控えた公開鍵と照合する（違えば接続しない）。
+          # GCE を作り直して鍵が変わったら、gcloud compute ssh の控え（~/.ssh/google_compute_known_hosts）と
+          # ssh-keyscan の結果が一致するのを確かめてから、この行を差し替える
+          echo "gce-portfolio ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAID8Lyqq1AuY+XK59fdIBY/eOeSoboac+V6tpcUs3ysyG" > ~/.ssh/known_hosts_gce
 
       - name: デプロイ実行
         if: steps.check.outputs.configured == 'true'
@@ -61,6 +63,8 @@ jobs:
           SSH_USER: ${{ secrets.GCE_SSH_USER }}
           SKIP_BACKUP: ${{ github.event.inputs.skip_backup == 'true' && '1' || '0' }}
         run: |
-          ssh -i ~/.ssh/id_deploy "$SSH_USER@$HOST" \
+          ssh -i ~/.ssh/id_deploy \
+            -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts_gce -o HostKeyAlias=gce-portfolio \
+            "$SSH_USER@$HOST" \
             "SKIP_BACKUP=$SKIP_BACKUP bash -s" \
             < portfolio-dashboard/deploy/deploy.sh
