@@ -1,9 +1,13 @@
 """Google Sheets → SQLite 一方向同期モジュール"""
 
+import os
 import sqlite3
 from datetime import datetime
 
+import google.auth
 import gspread
+from google.auth import impersonated_credentials
+from google.auth.credentials import Credentials as BaseCredentials
 from google.oauth2.service_account import Credentials
 from gspread.utils import ValueInputOption
 
@@ -38,13 +42,47 @@ def _to_float_or_none(v: object) -> float | None:
         return None
 
 
+def load_sheets_credentials(
+    credentials_path: str, impersonate_sa: str = ""
+) -> BaseCredentials:
+    """Sheets 用の認証情報を返す
+
+    impersonate_sa があれば、実行環境の既定の認証情報から
+    その SA になりすます（鍵ファイル不要）。
+    無ければ従来どおり鍵ファイル（credentials_path）を使う。
+    """
+    if impersonate_sa:
+        if os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
+            # 既定の認証情報が鍵ファイルを指したままだと、
+            # なりすましの元が鍵になってしまう
+            raise ValueError(
+                "SHEETS_IMPERSONATE_SA と GOOGLE_APPLICATION_CREDENTIALS が"
+                "両方設定されています。なりすましに切り替えるなら"
+                " GOOGLE_APPLICATION_CREDENTIALS を外してください"
+            )
+        # 元の認証情報のスコープは impersonated_credentials が IAM 用に差し替える。
+        # GCE ではトークンのスコープは VM のアクセススコープで決まる
+        # （cloud-platform か iam が要る）
+        source, _ = google.auth.default()
+        return impersonated_credentials.Credentials(
+            source_credentials=source,
+            target_principal=impersonate_sa,
+            target_scopes=SCOPES,
+        )
+    return Credentials.from_service_account_file(credentials_path, scopes=SCOPES)
+
+
 class SheetsSync:
     """Sheets のポートフォリオシートを SQLite の holdings / purchase_history に同期"""
 
     def __init__(
-        self, credentials_path: str, spreadsheet_id: str, db_path: str
+        self,
+        credentials_path: str,
+        spreadsheet_id: str,
+        db_path: str,
+        impersonate_sa: str = "",
     ) -> None:
-        creds = Credentials.from_service_account_file(credentials_path, scopes=SCOPES)
+        creds = load_sheets_credentials(credentials_path, impersonate_sa)
         gc = gspread.authorize(creds)
         self.spreadsheet = gc.open_by_key(spreadsheet_id)
         self.conn = sqlite3.connect(db_path)

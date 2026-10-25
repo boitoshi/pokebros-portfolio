@@ -122,6 +122,7 @@ uv run ruff check . && uv run ty check
 ## 環境設定
 
 - `portfolio-dashboard/collector/.env`: `DB_PATH`, `ANTHROPIC_API_KEY`, `WP_URL`, `WP_USER`, `WP_APP_PASSWORD`, `WP_PUBLISH_ENABLED`, `BLOG_EMBED_ENABLED`, `AI_COMMENTS_FORCE`
+- Sheets の認証（`SPREADSHEET_ID` のシートを読む）: `SHEETS_IMPERSONATE_SA` を指定すると、実行環境の既定の認証情報（GCE なら VM の SA `portfolio-vm`）からその SA になりすます（鍵ファイル不要）。指定しなければ `GOOGLE_APPLICATION_CREDENTIALS` の鍵ファイルを使う。両方を同時に置くとエラーで止まる。月次バッチは Sheets 同期が無効なら中止する（終了コード 1）。なりすましの前提: VM のアクセススコープに `cloud-platform`（か `iam`）、VM の SA がなりすまし先への Token Creator、シートがなりすまし先に共有済み。`gcloud auth application-default login` の ADC ファイルがあると、元の認証情報が VM の SA でなくそちらになる
 - `.env` の `DB_PATH` は GCE パス（`/app/...`）。ローカル実行時は `DB_PATH=<リポジトリ>/portfolio-dashboard/data/portfolio.db` を環境変数で上書きする
 - API キー等の秘密情報はユーザー本人が直接設定する（LLM に渡さない）
 
