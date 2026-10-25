@@ -43,3 +43,13 @@ def test_なりすまし先が無ければ鍵ファイルを使う(monkeypatch):
     ) as from_file:
         load_sheets_credentials("/path/key.json", "")
     from_file.assert_called_once_with("/path/key.json", scopes=SCOPES)
+
+
+def test_月次バッチはSheets同期が無効なら株価収集へ進まずに止める():
+    from main import PortfolioDataCollector
+
+    collector = object.__new__(PortfolioDataCollector)
+    collector.sheets_sync = None
+    collector.collect_monthly_data = MagicMock(return_value=True)
+    assert collector.collect_and_publish(2026, 10) is False
+    collector.collect_monthly_data.assert_not_called()

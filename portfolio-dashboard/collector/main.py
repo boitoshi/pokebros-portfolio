@@ -157,7 +157,10 @@ class PortfolioDataCollector:
             history_count = self.sheets_sync.sync_purchase_history()
             print(f"  同期完了: {synced}件（購入履歴: {history_count}件）")
         else:
-            print("  スキップ（Sheets 認証無効）")
+            # ここで先へ進むと、古い保有データのまま月次記事が作られてしまう
+            print("❌ Sheets 同期が無効です（認証設定を確認してください）")
+            print("   古い保有データで記事を作らないよう、月次バッチを中止します")
+            return False
 
         # 2. yfinance で株価取得 → SQLite 保存
         print("\n[2/7] 株価データ収集中...")
