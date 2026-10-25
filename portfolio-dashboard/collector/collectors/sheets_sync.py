@@ -60,9 +60,10 @@ def load_sheets_credentials(
                 "両方設定されています。なりすましに切り替えるなら"
                 " GOOGLE_APPLICATION_CREDENTIALS を外してください"
             )
-        source, _ = google.auth.default(
-            scopes=["https://www.googleapis.com/auth/cloud-platform"]
-        )
+        # 元の認証情報のスコープは impersonated_credentials が IAM 用に差し替える。
+        # GCE ではトークンのスコープは VM のアクセススコープで決まる
+        # （cloud-platform か iam が要る）
+        source, _ = google.auth.default()
         return impersonated_credentials.Credentials(
             source_credentials=source,
             target_principal=impersonate_sa,

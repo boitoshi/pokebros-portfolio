@@ -20,9 +20,7 @@ def test_なりすまし先があれば既定の認証情報からなりすま�
     source = MagicMock()
     with patch("google.auth.default", return_value=(source, "p")) as default:
         creds = load_sheets_credentials("/does/not/exist.json", SA)
-    default.assert_called_once_with(
-        scopes=["https://www.googleapis.com/auth/cloud-platform"]
-    )
+    default.assert_called_once_with()
     assert isinstance(creds, impersonated_credentials.Credentials)
     assert creds.service_account_email == SA
     assert creds._target_scopes == SCOPES
@@ -50,6 +48,22 @@ def test_月次バッチはSheets同期が無効なら株価収集へ進まず�
 
     collector = object.__new__(PortfolioDataCollector)
     collector.sheets_sync = None
+    # 中止せずに先へ進んだら、ここが呼ばれて assert で落ちる
     collector.collect_monthly_data = MagicMock(return_value=True)
+    collector.benchmark_collector = MagicMock()
+    collector.report_generator = MagicMock()
     assert collector.collect_and_publish(2026, 10) is False
     collector.collect_monthly_data.assert_not_called()
+
+
+def test_月次バッチが失敗したら終了コード1で終わる(monkeypatch):
+    import main
+
+    fake = MagicMock()
+    fake.collect_and_publish.return_value = False
+    monkeypatch.setattr(main, "PortfolioDataCollector", lambda: fake)
+    monkeypatch.setattr(main, "SPREADSHEET_ID", "dummy")
+    monkeypatch.setattr("sys.argv", ["main.py", "2026", "10"])
+    with pytest.raises(SystemExit) as exc:
+        main.main()
+    assert exc.value.code == 1

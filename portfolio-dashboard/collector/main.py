@@ -1369,11 +1369,14 @@ def main() -> None:
         ym = _parse_year_month(args, "")
         if ym:
             print(f"バッチモード: {ym[0]}年{ym[1]}月")
-            collector.collect_and_publish(*ym)
+            # 失敗を cron の外からも分かるよう終了コードで返す
+            if not collector.collect_and_publish(*ym):
+                sys.exit(1)
 
     # python main.py --sync  → Sheets同期のみ
     elif args == ["--sync"]:
-        collector.sync_holdings_only()
+        if not collector.sync_holdings_only():
+            sys.exit(1)
 
     # python main.py --latest  → トップページ用の最新スナップショットのみ更新
     elif args == ["--latest"]:
@@ -1412,10 +1415,11 @@ def main() -> None:
     # python main.py --add-purchase 7974.T 2026-08-01 1 8500          （日本株）
     # python main.py --add-purchase NVDA 2026-08-01 1 208.27 162.35   （外国株）
     elif len(args) in (5, 6) and args[0] == "--add-purchase":
-        collector.add_purchase(
+        if not collector.add_purchase(
             args[1], args[2], args[3], args[4],
             args[5] if len(args) == 6 else None,
-        )
+        ):
+            sys.exit(1)
 
     # python main.py --add-dividend 7974.T 2026-06-27 2 118           （日本株）
     # python main.py --add-dividend NVDA 2026-06-27 2 0.01 155.30     （外国株）
