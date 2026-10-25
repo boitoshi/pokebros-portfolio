@@ -29,6 +29,7 @@ from config.settings import (
     CURRENCY_SETTINGS,
     DB_PATH,
     GOOGLE_APPLICATION_CREDENTIALS,
+    SHEETS_IMPERSONATE_SA,
     SPREADSHEET_ID,
     WP_APP_PASSWORD,
     WP_CATEGORY_IDS,
@@ -92,7 +93,10 @@ class PortfolioDataCollector:
         self.sheets_sync = None
         try:
             self.sheets_sync = SheetsSync(
-                GOOGLE_APPLICATION_CREDENTIALS, SPREADSHEET_ID, DB_PATH
+                GOOGLE_APPLICATION_CREDENTIALS,
+                SPREADSHEET_ID,
+                DB_PATH,
+                impersonate_sa=SHEETS_IMPERSONATE_SA,
             )
         except Exception as e:
             print(f"  Sheets 同期: 無効（{e}）")

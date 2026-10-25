@@ -18,6 +18,10 @@ GOOGLE_APPLICATION_CREDENTIALS = os.getenv(
     ),
 )
 SPREADSHEET_ID = os.getenv("SPREADSHEET_ID", "")
+# Sheets を鍵ファイルなしで読むときの、なりすまし先のサービスアカウント。
+# 指定すると実行環境の既定の認証情報（GCE なら VM の SA）からこの SA になりすます。
+# このとき GOOGLE_APPLICATION_CREDENTIALS は .env に置かない
+SHEETS_IMPERSONATE_SA = os.getenv("SHEETS_IMPERSONATE_SA", "")
 DB_PATH = os.getenv(
     "DB_PATH",
     str(Path(__file__).parent.parent.parent / "data" / "portfolio.db"),
