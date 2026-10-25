@@ -26,7 +26,7 @@ jobs:
     name: GCE へデプロイ
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # シークレット未設定のリポジトリでも失敗にせずスキップで終わらせる
       - name: シークレット設定を確認
