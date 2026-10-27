@@ -139,7 +139,7 @@ uv run ruff check . && uv run ty check
 
 - コードコメント・コミットメッセージ・会話はすべて日本語
 - AGENTS.md・README.md は開発状況に合わせて随時更新する（CLAUDE.md は作らない）
-- 開発の問題点・実装計画は `PROJECT_PROCEED.md` で管理する
+- `PROJECT_PROCEED.md` は 2026-08 で更新停止した旧計画・記録（過去の経緯を見るときだけ読む）。現在の構成と手順は README.md と docs/ が正
 - DB スキーマ変更は additive のみ（本番 SQLite が GCE にあるため）。`sheets_sync` が holdings を全入替するので銘柄メタは `stock_meta` テーブルに置く
 
 ---
