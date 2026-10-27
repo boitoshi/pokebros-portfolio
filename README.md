@@ -39,7 +39,7 @@ cd collector
 uv sync --extra ai --extra charts   # 素の uv sync は extras を削除するので付ける
 ```
 
-collector の設定は `portfolio-dashboard/collector/.env` に置く（`DB_PATH`, `SPREADSHEET_ID`, `GOOGLE_APPLICATION_CREDENTIALS`, `ANTHROPIC_API_KEY`, `WP_URL`, `WP_USER`, `WP_APP_PASSWORD`, `WP_PUBLISH_ENABLED`, `BLOG_EMBED_ENABLED` など）。`.env` の `DB_PATH` は GCE のパスなので、ローカルでは環境変数で上書きする。
+collector の設定は `portfolio-dashboard/collector/.env` に置く（`DB_PATH`, `SPREADSHEET_ID`, `GOOGLE_APPLICATION_CREDENTIALS` または `SHEETS_IMPERSONATE_SA`, `ANTHROPIC_API_KEY`, `AI_COMMENTS_ENABLED`, `WP_URL`, `WP_USER`, `WP_APP_PASSWORD`, `WP_PUBLISH_ENABLED`, `BLOG_EMBED_ENABLED` など）。Sheets の認証は `GOOGLE_APPLICATION_CREDENTIALS`（鍵ファイル）と `SHEETS_IMPERSONATE_SA`（鍵なし。実行環境の認証情報からそのサービスアカウントになりすます。GCE 向け）の**どちらか一方だけ**を置く（両方あるとエラーで止まる。`.env.example` 参照）。`.env` の `DB_PATH` は GCE のパスなので、ローカルでは環境変数で上書きする。
 
 ```bash
 DB_PATH=<リポジトリ>/portfolio-dashboard/data/portfolio.db uv run python main.py --blog 2026 8
@@ -61,6 +61,8 @@ uv run python main.py --blog 2026 8           # ブログ下書き＋埋め込�
 uv run python main.py --sync                  # Google Sheets → SQLite 同期のみ
 uv run python main.py --add-purchase 7974.T 2026-08-01 1 8500   # 買付の記録
 uv run python main.py --add-dividend 7974.T 2026-06-27 2 118    # 配当の記録
+uv run python main.py --benchmark 2026 8     # ベンチマーク（日経225 / S&P500）と TWR の再計算のみ（DB 内の全月が対象）
+uv run python main.py --generate-chart 任天堂 7974.T 2023-06-28 2026-03-31 [JPY]  # 株価チャート PNG（DB 非依存。通貨は省略時 JPY）
 uv run ruff check . && uv run ty check
 ```
 
@@ -72,7 +74,7 @@ uv run ruff check . && uv run ty check
 
 - [`AGENTS.md`](AGENTS.md) — 開発ルール・コマンド・環境設定（Claude Code / Codex 共通の正本）
 - [`docs/portfolio-dashboard.md`](docs/portfolio-dashboard.md) — 現行システムの詳細（DB テーブル・API・ブログ埋め込み・GCE デプロイ）
-- [`PROJECT_PROCEED.md`](PROJECT_PROCEED.md) — 課題と実装計画
+- [`PROJECT_PROCEED.md`](PROJECT_PROCEED.md) — 2026-08 で更新停止した旧計画・記録（現在の構成と手順は README.md と docs/ を見る）
 - `docs/` のその他のファイル — 旧構成（Google Sheets + Next.js + FastAPI）の記録
 
 ## 注意事項

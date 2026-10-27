@@ -95,6 +95,11 @@ uv run python main.py --blog YYYY MM
 - `--repair-pnl [--dry-run]`: monthly_pnl の取得系カラム（shares/cost/acquired_price 系/value/profit）を purchase_history の累積で全月再計算。current_price 系は変更しない。月次収集後にも対象月分が自動補正される（collect_monthly_data 末尾フック）
 - `uv run python repair_prices.py --db <DB> [--apply]`: 月末価格を yfinance の**未調整終値**に揃え直し、評価額・損益と monthly_prices を再計算する単発ツール（既定はドライラン）。2023-07〜2025-08 の日本株が配当調整後終値で保存されていたのを直すために作った（2026-10）。適用後は `main.py --benchmark YYYY M` で TWR を再計算する。為替の過去データ修正は `repair_fx.py`
 
+## ベンチマーク再計算とチャート生成
+
+- `uv run python main.py --benchmark 2026 8`: ベンチマークのみ実行する。monthly_pnl の全月から時間加重リターン（TWR）を計算し、日経225（`^N225`）・S&P500（`^GSPC`）の初月基準の累積リターンとあわせて benchmark_data に保存する（月次フル収集の中でも同じ処理が走る）。年月は必須の引数だが、`collect` の中では見出しの表示にしか使われず、対象は DB に入っている全月。`repair_prices.py` で価格を直したあとの TWR 再計算に使う
+- `uv run python main.py --generate-chart 任天堂 7974.T 2023-06-28 2026-03-31 [JPY]`: 株価の折れ線チャート PNG を作る単発の POC ツール。引数は `NAME SYMBOL START END [CURRENCY]`（通貨は省略時 JPY。`--extra charts` の matplotlib が要る）。DB にも `SPREADSHEET_ID` にも依存せず、`collector/output/charts/{SYMBOL}_{START}_{END}.png` に保存する
+
 ## GCE デプロイ手順
 
 ### 自動デプロイ（GitHub Actions）
@@ -107,6 +112,8 @@ main への push（portfolio-dashboard/ 配下の変更）で `.github/workflows
 - GCE 側で deploy ユーザーがパスワードなしで再起動できるよう sudoers 設定:
   `echo 'deploy ALL=(root) NOPASSWD: /usr/bin/systemctl restart portfolio' | sudo tee /etc/sudoers.d/deploy-portfolio`
 - Secrets 未設定の間はデプロイジョブはエラーにならずスキップされる
+
+GCE のホスト鍵は `.github/workflows/deploy.yml` に固定している（`known_hosts_gce` に公開鍵を1行書き、`StrictHostKeyChecking=yes` で接続のたびに照合する。違えば接続しない）。GCE を作り直してホスト鍵が変わったときは、`gcloud compute ssh` の控え（`~/.ssh/google_compute_known_hosts`）と `ssh-keyscan` の結果が一致するのを確かめてから、deploy.yml の「SSH 鍵をセットアップ」ステップにある `echo "gce-portfolio ssh-ed25519 ..." > ~/.ssh/known_hosts_gce` の行を新しい公開鍵に差し替える。
 
 ### 手動デプロイ
 
