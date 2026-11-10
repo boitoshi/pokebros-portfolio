@@ -15,14 +15,14 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "hono": "^4.13.13",
-    "@hono/node-server": "^1",
+    "@hono/node-server": "^2.1.6",
     "better-sqlite3": "^11",
-    "drizzle-orm": "^0.45.2"
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.13.13"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.31",
     "@types/better-sqlite3": "^7",
+    "drizzle-kit": "^0.31",
     "tsx": "^4",
     "typescript": "^5.7",
     "vitest": "^4.1.12"
