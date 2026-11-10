@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { db } from "../db/index.js";
 import { dividends, stockMeta } from "../db/schema.js";
-import { resolveStockColors } from "../services/reportData.js";
+import { FALLBACK_COLORS, resolveStockColors } from "../services/reportData.js";
 
 const app = new Hono();
 
@@ -32,7 +32,7 @@ app.get("/", (c) => {
     currency: r.currency,
     exchangeRate: r.exchangeRate ?? null,
     totalJpy: r.totalJpy,
-    color: colorMap.get(r.code)!,
+    color: colorMap.get(r.code) ?? FALLBACK_COLORS[0],
   }));
 
   const totalJpy = rows.reduce((sum, r) => sum + r.totalJpy, 0);

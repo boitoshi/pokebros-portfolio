@@ -8,7 +8,7 @@ process.env.DB_PATH = ":memory:";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-let app: any;
+let app: typeof import("../index.js").default;
 
 beforeAll(async () => {
   // db/index.ts は process.env.DB_PATH を参照するので、インポート前に設定済み

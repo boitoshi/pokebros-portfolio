@@ -30,8 +30,11 @@ function buildYearlyStack(data: DividendItem[]): {
 
   for (const item of data) {
     const year = Number(item.date.slice(0, 4));
-    if (!yearMap.has(year)) yearMap.set(year, {});
-    const yearEntry = yearMap.get(year)!;
+    let yearEntry = yearMap.get(year);
+    if (!yearEntry) {
+      yearEntry = {};
+      yearMap.set(year, yearEntry);
+    }
     yearEntry[item.code] = (yearEntry[item.code] ?? 0) + item.totalJpy;
     if (!codeMap.has(item.code)) {
       codeMap.set(item.code, { name: item.name, color: item.color });

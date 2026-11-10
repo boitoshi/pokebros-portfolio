@@ -40,8 +40,12 @@ export function buildPivotData(
 
   const pivotMap = new Map<string, Record<string, number>>();
   for (const d of data) {
-    if (!pivotMap.has(d.date)) pivotMap.set(d.date, {});
-    pivotMap.get(d.date)![d.name] = getValue(d);
+    let row = pivotMap.get(d.date);
+    if (!row) {
+      row = {};
+      pivotMap.set(d.date, row);
+    }
+    row[d.name] = getValue(d);
   }
 
   return {
