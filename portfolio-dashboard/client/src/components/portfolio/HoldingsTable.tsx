@@ -138,11 +138,12 @@ function PurchaseHistoryTable({
       <tbody className="divide-y divide-gray-100">
         {purchases.map((p) => {
           const isForeign = p.priceForeign != null;
-          const jpyAmount = isForeign
-            ? p.exchangeRate != null
-              ? p.priceForeign! * p.exchangeRate * p.shares
-              : null
-            : p.price * p.shares;
+          const jpyAmount =
+            p.priceForeign == null
+              ? p.price * p.shares
+              : p.exchangeRate != null
+                ? p.priceForeign * p.exchangeRate * p.shares
+                : null;
 
           return (
             <tr key={p.seq}>

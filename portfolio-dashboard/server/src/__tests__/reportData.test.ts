@@ -8,7 +8,9 @@
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import { beforeAll, describe, expect, it } from "vitest";
+import type * as schemaTypes from "../db/schema.js";
 
 // テスト前に DB_PATH を :memory: へ変更（db/index.ts より先に設定）
 // ※ routes.test.ts が同じ process.env.DB_PATH を使うため、
@@ -17,7 +19,7 @@ process.env.DB_PATH_REPORT_TEST = ":memory:";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-let testDb: any;
+let testDb: BetterSQLite3Database<typeof schemaTypes>;
 
 beforeAll(async () => {
   // better-sqlite3 でインメモリ DB を独立生成
@@ -89,6 +91,14 @@ beforeAll(async () => {
   `);
 });
 
+/** レポートを構築し、null ならテストを失敗させる（以降のアサーションで `!` を使わずに済む） */
+async function buildOrFail(targetDate: string) {
+  const { buildReportData } = await import("../services/reportData.js");
+  const result = buildReportData(testDb, targetDate);
+  if (!result) throw new Error(`${targetDate} のレポートが null だった`);
+  return result;
+}
+
 describe("buildReportData", () => {
   it("対象月が存在しない場合は null を返す", async () => {
     const { buildReportData } = await import("../services/reportData.js");
@@ -97,20 +107,16 @@ describe("buildReportData", () => {
   });
 
   it("最新月（2024-07-末）のデータを正常に構築する", async () => {
-    const { buildReportData } = await import("../services/reportData.js");
-    const result = buildReportData(testDb, "2024-07-末");
-    expect(result).not.toBeNull();
-
-    expect(result!.meta.year).toBe(2024);
-    expect(result!.meta.month).toBe(7);
-    expect(result!.meta.reportDate).toBe("2024年7月末");
-    expect(result!.meta.exchangeRate).toBe(155.0);
+    const result = await buildOrFail("2024-07-末");
+    expect(result.meta.year).toBe(2024);
+    expect(result.meta.month).toBe(7);
+    expect(result.meta.reportDate).toBe("2024年7月末");
+    expect(result.meta.exchangeRate).toBe(155.0);
   });
 
   it("stocks は 1件（7974.T）で基本フィールドが正しい", async () => {
-    const { buildReportData } = await import("../services/reportData.js");
-    const result = buildReportData(testDb, "2024-07-末");
-    const stock = result!.stocks[0];
+    const result = await buildOrFail("2024-07-末");
+    const stock = result.stocks[0];
 
     expect(stock.code).toBe("7974.T");
     expect(stock.ticker).toBe("7974.T");
@@ -123,21 +129,18 @@ describe("buildReportData", () => {
   });
 
   it("quantity は 2回買付の合計株数（100+50=150）", async () => {
-    const { buildReportData } = await import("../services/reportData.js");
-    const result = buildReportData(testDb, "2024-07-末");
-    expect(result!.stocks[0].quantity).toBe(150);
+    const result = await buildOrFail("2024-07-末");
+    expect(result.stocks[0].quantity).toBe(150);
   });
 
   it("acquiredPrice は移動平均（1110000/150=7400）", async () => {
-    const { buildReportData } = await import("../services/reportData.js");
-    const result = buildReportData(testDb, "2024-07-末");
-    expect(result!.stocks[0].acquiredPrice).toBeCloseTo(7400, 5);
+    const result = await buildOrFail("2024-07-末");
+    expect(result.stocks[0].acquiredPrice).toBeCloseTo(7400, 5);
   });
 
   it("acquiredAvgHistory は stepped line になっている", async () => {
-    const { buildReportData } = await import("../services/reportData.js");
-    const result = buildReportData(testDb, "2024-07-末");
-    const stock = result!.stocks[0];
+    const result = await buildOrFail("2024-07-末");
+    const stock = result.stocks[0];
 
     // monthLabels: ["2023/6", "2023/7", "2024/7"]
     expect(stock.monthLabels).toEqual(["2023/6", "2023/7", "2024/7"]);
@@ -153,51 +156,40 @@ describe("buildReportData", () => {
   });
 
   it("priceHistory は monthly_pnl の currentPrice と一致する", async () => {
-    const { buildReportData } = await import("../services/reportData.js");
-    const result = buildReportData(testDb, "2024-07-末");
-    expect(result!.stocks[0].priceHistory).toEqual([6200, 6800, 10000]);
+    const result = await buildOrFail("2024-07-末");
+    expect(result.stocks[0].priceHistory).toEqual([6200, 6800, 10000]);
   });
 
   it("transactions は 2件（buy のみ）で month インデックスが正しい", async () => {
-    const { buildReportData } = await import("../services/reportData.js");
-    const result = buildReportData(testDb, "2024-07-末");
-    const txs = result!.stocks[0].transactions;
+    const result = await buildOrFail("2024-07-末");
+    const txs = result.stocks[0].transactions;
 
     expect(txs).toHaveLength(2);
     // 買付1: 2023/6 → monthLabels[0]
     const buy1 = txs.find((t) => t.price === 6500);
-    expect(buy1).toBeDefined();
-    expect(buy1!.month).toBe(0);
-    expect(buy1!.action).toBe("buy");
-    expect(buy1!.quantity).toBe(100);
+    expect(buy1).toMatchObject({ month: 0, action: "buy", quantity: 100 });
 
     // 買付2: 2024/7 → monthLabels[2]
     const buy2 = txs.find((t) => t.price === 9200);
-    expect(buy2).toBeDefined();
-    expect(buy2!.month).toBe(2);
-    expect(buy2!.action).toBe("buy");
-    expect(buy2!.quantity).toBe(50);
+    expect(buy2).toMatchObject({ month: 2, action: "buy", quantity: 50 });
   });
 
   it("previousMonthPrice は前月（2024-06-末）が存在しないので null", async () => {
     // テストデータには 2024-06-末 の monthly_pnl がないので null になる
-    const { buildReportData } = await import("../services/reportData.js");
-    const result = buildReportData(testDb, "2024-07-末");
-    expect(result!.stocks[0].previousMonthPrice).toBeNull();
+    const result = await buildOrFail("2024-07-末");
+    expect(result.stocks[0].previousMonthPrice).toBeNull();
   });
 
   it("previousMonthPrice は前月（2023-07-末）が存在する場合に取得できる", async () => {
     // 2023-06-末 の前月は 2023-05-末（データなし）→ null
     // 2023-07-末 の前月は 2023-06-末（データあり）→ 6200
-    const { buildReportData } = await import("../services/reportData.js");
-    const result = buildReportData(testDb, "2023-07-末");
-    expect(result!.stocks[0].previousMonthPrice).toBe(6200);
+    const result = await buildOrFail("2023-07-末");
+    expect(result.stocks[0].previousMonthPrice).toBe(6200);
   });
 
   it("totalHistory は全月の合計値を集計している", async () => {
-    const { buildReportData } = await import("../services/reportData.js");
-    const result = buildReportData(testDb, "2024-07-末");
-    const th = result!.totalHistory;
+    const result = await buildOrFail("2024-07-末");
+    const th = result.totalHistory;
 
     // 月数: 2023-06-末, 2023-07-末, 2024-07-末 の 3 月
     expect(th.months).toHaveLength(3);
@@ -210,15 +202,13 @@ describe("buildReportData", () => {
   });
 
   it("intro と summary は null（AI コメント未設定）", async () => {
-    const { buildReportData } = await import("../services/reportData.js");
-    const result = buildReportData(testDb, "2024-07-末");
-    expect(result!.intro).toBeNull();
-    expect(result!.summary).toBeNull();
+    const result = await buildOrFail("2024-07-末");
+    expect(result.intro).toBeNull();
+    expect(result.summary).toBeNull();
   });
 
   it("comment は null（AI コメント未設定）", async () => {
-    const { buildReportData } = await import("../services/reportData.js");
-    const result = buildReportData(testDb, "2024-07-末");
-    expect(result!.stocks[0].comment).toBeNull();
+    const result = await buildOrFail("2024-07-末");
+    expect(result.stocks[0].comment).toBeNull();
   });
 });

@@ -36,7 +36,10 @@ function makeTooltipContent(currency: "JPY" | "USD") {
     label,
   }: {
     active?: boolean;
-    payload?: Array<{ dataKey?: string | number; value?: number | string }>;
+    payload?: ReadonlyArray<{
+      dataKey?: unknown;
+      value?: unknown;
+    }>;
     label?: string | number;
   }): React.ReactElement | null {
     if (!active || !payload || payload.length === 0) return null;
@@ -121,7 +124,7 @@ export function StockPriceChart({
           tickFormatter={(v: number) => fmtPrice(v, currency)}
           width={currency === "USD" ? 58 : 52}
         />
-        <Tooltip content={TooltipContent as any} />
+        <Tooltip content={TooltipContent} />
         {/* 移動平均取得単価（ステップ表示） */}
         <Line
           type="stepAfter"

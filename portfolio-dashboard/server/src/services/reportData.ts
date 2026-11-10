@@ -153,7 +153,7 @@ export interface ReportData {
 // ────────────────────────────────────────────────────────────
 
 /** stock_meta 未登録銘柄に割り当てるフォールバックカラー */
-const FALLBACK_COLORS = ["#FF6F00", "#7B1FA2"];
+export const FALLBACK_COLORS = ["#FF6F00", "#7B1FA2"];
 
 /**
  * 銘柄コードの表示色を解決する。
@@ -271,11 +271,14 @@ export function buildReportData(
     totalByDate.set(r.date, existing);
   }
 
-  const sortedDates = [...totalByDate.keys()].sort();
+  // 日付キーで昇順に並べる（"YYYY-MM-末" なので文字列比較で月順になる）
+  const sortedTotals = [...totalByDate.entries()].sort(([a], [b]) =>
+    a < b ? -1 : a > b ? 1 : 0,
+  );
   const totalHistory = {
-    months: sortedDates.map((d) => toMonthLabel(parsePnlDate(d))),
-    assetValues: sortedDates.map((d) => totalByDate.get(d)!.assetValue),
-    plValues: sortedDates.map((d) => totalByDate.get(d)!.pl),
+    months: sortedTotals.map(([d]) => toMonthLabel(parsePnlDate(d))),
+    assetValues: sortedTotals.map(([, t]) => t.assetValue),
+    plValues: sortedTotals.map(([, t]) => t.pl),
   };
 
   // ── 5. 各銘柄の詳細データ構築 ────────────────────────────────
@@ -286,7 +289,8 @@ export function buildReportData(
     const isForeign = pnlRow.currency !== "JPY";
     const meta = metaMap.get(code);
 
-    const color = colorMap.get(code)!;
+    // resolveStockColors に全銘柄を渡しているので必ず見つかる（型を満たすための既定値）
+    const color = colorMap.get(code) ?? FALLBACK_COLORS[0];
     const market = meta?.market ?? "";
 
     // ── 5a. 全期間の monthly_pnl 履歴（保有開始月〜対象月） ────
