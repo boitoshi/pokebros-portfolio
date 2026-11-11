@@ -45,7 +45,7 @@ fi
 cd /app
 npm ci
 npm run build
-cd /app/collector && uv sync
+cd /app/collector && uv sync --extra ai --extra charts  # deploy.sh と同じ（素の uv sync は extras を入れない）
 
 # === データディレクトリ ===
 mkdir -p /app/data /app/logs
